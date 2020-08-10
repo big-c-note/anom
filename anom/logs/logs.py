@@ -1,8 +1,10 @@
 import logging
 from typing import List, Callable, Tuple, Dict
 import gzip
+import concurrent.futures
 
 import numpy as np
+from tqdm import tqdm
 
 from anom.utils.io import list_files
 
@@ -52,21 +54,45 @@ class Logs:
             each word in the log with a 1 representing if the word occured in a
             given example and a 0 otherwise.
         """
-        # TODO: add multiprocessing to this.
         log.info("Generating design matrix for modeling.")
-        for i, logs in enumerate(self._log_lines):
-            x = np.array([], dtype='int16')
-            vocab: np.ndarray = np.array(list(self._vocab.keys()))
-            for word in vocab:
-                if str(word) in logs:
-                    x = np.append(x, 1)
-                else:
-                    x = np.append(x, 0)
-            if i == 0:
-                X = x.copy()
-            else:
-                X = np.vstack((X, x))
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            X = np.array(
+                    list(
+                        tqdm(
+                            executor.map(
+                                self._process_log_line,
+                                self._log_lines,
+                                chunksize=len(self._log_lines) // 160,
+                            ),
+                            total=len(self._log_lines),
+                        )
+                    )
+                )
         return X
+
+
+    def _process_log_line(self, log_line: str) -> np.array:
+        """Create feature vector out of log line.
+
+        Parameters
+        ----------
+        log_line : str
+            A single line from the logs.
+
+        Returns
+        -------
+        x : np.array
+            Feature vector representing whether words from the vocab were found
+            in the line.
+        """
+        x = np.array([], dtype='int16')
+        vocab: np.ndarray = np.array(list(self._vocab.keys()))
+        for word in vocab:
+            if str(word) in log_line:
+                x = np.append(x, 1)
+            else:
+                x = np.append(x, 0)
+        return x
 
 
     def _get_logs(self) -> np.ndarray:
