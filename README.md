@@ -7,10 +7,10 @@ This repo will contain a best effort implementation of anomaly detection on linu
 
 ### Preprocessing
 
-- [ ] Create a flexible preprocessing framework for auth logs using config files.
-- [ ] Dump configurations into newly made research folder so the user can try out different preprocessing techniques.
+- [X] Create a flexible preprocessing framework for auth logs using config files.
+- [X] Dump configurations into newly made research folder so the user can try out different preprocessing techniques.
 - [ ] Allow for regex substitutions.
-- [ ] Create a command line interface.
+- [X] Create a command line interface.
 
 ### Modeling
 

@@ -3,3 +3,4 @@ data
 research
 __pycache__
 *.egg-info
+results*

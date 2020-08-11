@@ -18,3 +18,4 @@ __version__ = "0.0.1"
 
 from . import utils
 from . import logs
+from . import cli

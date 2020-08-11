@@ -1,7 +1,10 @@
 import logging
+from pathlib import Path
 from typing import List, Callable, Tuple, Dict
 import gzip
 import concurrent.futures
+import joblib
+import yaml
 
 import numpy as np
 from tqdm import tqdm
@@ -37,14 +40,22 @@ class Logs:
     def __init__(
         self,
         log_dir: str,
-        tokenize_function: Callable[[str], List[str]]
+        tokenize_function: Callable[[str], List[str]],
+        save_dir: Path
     ):
+        self._save_dir = save_dir
         self._log_dir = self._fix_log_dir(log_dir)
         self._tokenize = tokenize_function
         self._logs, self._log_lines = self._get_logs()
-        self._vocab = self._get_vocab()
 
-    def get_X(self) -> np.ndarray:
+    def process_logs(self) -> np.array:
+        """Runs all processing functions."""
+        self._vocab = self._get_vocab()
+        self._X = self._get_X()
+        self._dump_data()
+        return self._X
+
+    def _get_X(self) -> np.ndarray:
         """
         Format a design matrix for modeling.
 
@@ -70,7 +81,6 @@ class Logs:
                 )
         return X
 
-
     def _process_log_line(self, log_line: str) -> np.array:
         """Create feature vector out of log line.
 
@@ -94,7 +104,6 @@ class Logs:
                 x = np.append(x, 0)
         return x
 
-
     def _get_logs(self) -> np.ndarray:
         """
         Load log information.
@@ -107,7 +116,11 @@ class Logs:
             A numpy array of logs.
         """
         log.info("Loading auth logs.")
-        files: List[str] = list_files(self._log_dir)
+        files: List[str] = [
+            fname for fname in list_files(self._log_dir) if 'auth' in fname
+        ]
+        if not files:
+            raise Exception("Found no files, you may want to check your log_dir.")
         logs: str = ''
         # Replacing newlines with a charater we can split on.
         special_char: str = " $$$ "
@@ -123,7 +136,6 @@ class Logs:
         log_lines: np.ndarray = np.array(logs.split(special_char)[:-1])
         return logs, log_lines
 
-
     def _get_vocab(self) -> Dict[str, int]:
         """
         Find unique words in the logs and assign a unique id.
@@ -137,6 +149,9 @@ class Logs:
         vocab: set = set(tokens)
         return {token: idx for idx, token in enumerate(vocab)}
 
+    def _dump_data(self):
+        """Dump important data."""
+        joblib.dump(self.__dict__, Path(self._save_dir) / "server.gz")
 
     @staticmethod
     def _process_logs(logs, replace: List[Tuple]) -> str:
@@ -144,7 +159,6 @@ class Logs:
         preprcossesing."""
         log.info("Processing logs.")
         return logs
-
 
     @staticmethod
     def _fix_log_dir(log_dir: str) -> str:

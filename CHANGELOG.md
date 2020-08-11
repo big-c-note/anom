@@ -12,6 +12,8 @@ Below are changes that have not been released yet. When a release is made, turn 
 
 - [Adds logs submodule for processing logs into design matrix.](https://github.com/big-c-note/anom/issues/6) 
 - [Adds maintain a changelog.](https://github.com/big-c-note/anom/issues/4)
+- [Adds CLI.](https://github.com/big-c-note/anom/issues/9)
+- [Adds create config file and results dump for different tokenization and feature cleaning strategies.](https://github.com/big-c-note/anom/issues/5)
  
 ### Changed
  
